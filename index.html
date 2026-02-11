@@ -1,18 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bharat App Store</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
+
   <header>
     <h1>Bharat App Store 🇮🇳</h1>
   </header>
 
+  <!-- Upload Form -->
+  <div class="app-card">
+    <h2>🚀 Apna App Upload Kare</h2>
+    <input type="text" id="appName" placeholder="App Name">
+    <input type="text" id="appDesc" placeholder="App Description">
+    <button onclick="addApp()">Submit</button>
+  </div>
+
+  <!-- Sample App 1 -->
   <div class="app-card">
     <h2>📱 Desi Chat App</h2>
     <p>Indian messaging app with fast performance.</p>
     <button>Install</button>
   </div>
 
+  <!-- Sample App 2 -->
   <div class="app-card">
     <h2>🎮 India Game Pro</h2>
     <p>Made in India action game.</p>
     <button>Install</button>
   </div>
 
+  <script>
+    function addApp() {
+      const name = document.getElementById("appName").value;
+      const desc = document.getElementById("appDesc").value;
+
+      if (!name || !desc) {
+        alert("Please fill all fields");
+        return;
+      }
+
+      const appDiv = document.createElement("div");
+      appDiv.className = "app-card";
+      appDiv.innerHTML = `
+        <h2>${name}</h2>
+        <p>${desc}</p>
+        <button>Install</button>
+      `;
+
+      document.body.appendChild(appDiv);
+
+      document.getElementById("appName").value = "";
+      document.getElementById("appDesc").value = "";
+    }
+  </script>
+
 </body>
+</html>
