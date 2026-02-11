@@ -1,20 +1,8 @@
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f5f7fb;
-}
-
-header {
+button {
   background: #0d6efd;
   color: white;
-  padding: 16px;
-  text-align: center;
-}
-
-.app-card {
-  background: white;
-  margin: 12px;
-  padding: 12px;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
 }
