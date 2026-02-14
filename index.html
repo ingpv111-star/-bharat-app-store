@@ -7,22 +7,30 @@
 
 <body>
 
+  <h2>🇮🇳 Bharat AI App Store</h2>
+
   <button onclick="login()">Login with Google</button>
+  <button onclick="logout()">Logout</button>
+
   <p id="userInfo"></p>
 
-  <!-- Firebase Script Yaha -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup } 
-    from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+    import { 
+      getAuth, 
+      GoogleAuthProvider, 
+      signInWithPopup, 
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "YOUR_KEY",
-      authDomain: "YOUR_DOMAIN",
-      projectId: "YOUR_ID",
-      storageBucket: "YOUR_BUCKET",
-      messagingSenderId: "YOUR_MSG_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
+      authDomain: "bharat-app-store-8a633.firebaseapp.com",
+      projectId: "bharat-app-store-8a633",
+      storageBucket: "bharat-app-store-8a633.firebasestorage.app",
+      messagingSenderId: "884921246902",
+      appId: "1:884921246902:web:df39e5c157c123bebd7217"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -31,15 +39,24 @@
 
     window.login = function() {
       signInWithPopup(auth, provider)
-        .then((result) => {
-          const user = result.user;
-          document.getElementById("userInfo").innerHTML =
-            "Welcome " + user.displayName + " 🎉";
-        })
         .catch((error) => {
           alert("Login Error: " + error.message);
         });
     }
+
+    window.logout = function() {
+      signOut(auth);
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("userInfo").innerHTML =
+          "Welcome " + user.displayName + " 🎉";
+      } else {
+        document.getElementById("userInfo").innerHTML =
+          "User not logged in";
+      }
+    });
   </script>
 
 </body>
