@@ -2,94 +2,45 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bharat AI App Store</title>
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      text-align: center;
-    }
-
-    header {
-      background: #0d6efd;
-      color: white;
-      padding: 15px;
-      font-size: 20px;
-    }
-
-    .container {
-      padding: 20px;
-    }
-
-    button {
-      padding: 10px 20px;
-      background: #0d6efd;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 20px;
-    }
-
-    .app-card {
-      background: white;
-      padding: 15px;
-      margin-top: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: inline-block;
-    }
-  </style>
 </head>
 
 <body>
 
-<header>
-  🇮🇳 Bharat AI App Store
-</header>
-
-<div class="container">
   <button onclick="login()">Login with Google</button>
+  <p id="userInfo"></p>
 
-  <div class="app-card">
-    <h3>Coming Soon 🚀</h3>
-    <p>App upload system under development</p>
-  </div>
-</div>
+  <!-- Firebase Script Yaha -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup } 
+    from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup } 
-  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+    const firebaseConfig = {
+      apiKey: "YOUR_KEY",
+      authDomain: "YOUR_DOMAIN",
+      projectId: "YOUR_ID",
+      storageBucket: "YOUR_BUCKET",
+      messagingSenderId: "YOUR_MSG_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
-    authDomain: "bharat-app-store-8a633.firebaseapp.com",
-    projectId: "bharat-app-store-8a633",
-    storageBucket: "bharat-app-store-8a633.firebasestorage.app",
-    messagingSenderId: "884921246902",
-    appId: "1:884921246902:web:df39e5c157c123bebd7217",
-    measurementId: "G-K2BCG57D54"
-  };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
-
-  window.login = function() {
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        const user = result.user;
-        alert("Welcome " + user.displayName + " 🎉");
-      })
-      .catch((error) => {
-        alert("Login Error: " + error.message);
-      });
-  }
-</script>
+    window.login = function() {
+      signInWithPopup(auth, provider)
+        .then((result) => {
+          const user = result.user;
+          document.getElementById("userInfo").innerHTML =
+            "Welcome " + user.displayName + " 🎉";
+        })
+        .catch((error) => {
+          alert("Login Error: " + error.message);
+        });
+    }
+  </script>
 
 </body>
 </html>
