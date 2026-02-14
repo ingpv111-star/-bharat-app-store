@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -62,6 +61,25 @@
 function login() {
   alert("Firebase Login Coming Next Step 🔥");
 }
+</script>
+
+<!-- ✅ Firebase Script YAHAN -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
+    authDomain: "bharat-app-store-8a633.firebaseapp.com",
+    projectId: "bharat-app-store-8a633",
+    storageBucket: "bharat-app-store-8a633.firebasestorage.app",
+    messagingSenderId: "884921246902",
+    appId: "1:884921246902:web:df39e5c157c123bebd7217",
+    measurementId: "G-K2BCG57D54"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
 </script>
 
 </body>
