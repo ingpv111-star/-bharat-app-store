@@ -1,75 +1,270 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bharat App Store</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>🇮🇳 Bharat AI App Store – PRO</title>
 
-    <!-- Razorpay Script -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background: #f4f6f9;
-            margin: 0;
-            padding: 0;
-        }
-
-        h1 {
-            margin-top: 40px;
-        }
-
-        .btn {
-            background: #1a73e8;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        .btn:hover {
-            background: #1558b0;
-        }
-
-        .container {
-            margin-top: 80px;
-        }
-    </style>
+<style>
+body{
+font-family:Arial;
+background:#111;
+color:white;
+text-align:center;
+margin:0;
+padding:20px;
+}
+.container{max-width:1000px;margin:auto;}
+button{
+padding:8px 15px;
+margin:5px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+background:#ff9800;
+color:white;
+}
+input, textarea, select{
+padding:6px;
+margin:5px;
+width:250px;
+border-radius:6px;
+border:none;
+}
+.grid{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+}
+.card{
+background:#222;
+padding:15px;
+margin:10px;
+border-radius:12px;
+width:200px;
+position:relative;
+transition:0.3s;
+}
+.card:hover{transform:scale(1.05);}
+.boost-badge{
+position:absolute;
+top:8px;
+right:8px;
+background:red;
+padding:3px 6px;
+font-size:12px;
+border-radius:6px;
+}
+.admin-panel{
+background:#333;
+padding:15px;
+border-radius:12px;
+margin-top:20px;
+}
+</style>
 </head>
-
 <body>
 
 <div class="container">
-    <h1>Bharat App Store</h1>
-    <button class="btn" onclick="boostApp()">Boost App ₹199</button>
+
+<h1>🇮🇳 Bharat AI App Store – PRO</h1>
+
+<button id="loginBtn">Login</button>
+<button id="logoutBtn" style="display:none;">Logout</button>
+<h3 id="welcome"></h3>
+
+<hr>
+
+<h3>🔎 Search Apps</h3>
+<input id="searchInput" placeholder="Search app...">
+<button onclick="startVoice()">🎤 Voice</button>
+
+<hr>
+
+<h3>Upload App</h3>
+<input id="appName" placeholder="App Name"><br>
+<textarea id="appDesc" placeholder="Description"></textarea><br>
+<select id="appCategory">
+<option value="">Select Category</option>
+<option>AI</option>
+<option>Education</option>
+<option>Finance</option>
+<option>Tools</option>
+<option>Entertainment</option>
+</select><br>
+<input type="file" id="appFile"><br>
+<button id="uploadBtn">Upload</button>
+
+<hr>
+
+<h2>📂 All Apps</h2>
+<div class="grid" id="approvedApps"></div>
+
+<hr>
+
+<h2>🧑‍💻 My Apps</h2>
+<div class="grid" id="myApps"></div>
+
+<div id="adminSection" style="display:none;" class="admin-panel">
+<h2>🛡 ADMIN PANEL</h2>
+<p>Total Apps: <span id="totalApps"></span></p>
+<p>Total Downloads: <span id="totalDownloads"></span></p>
+<p>Total Boosted Apps: <span id="totalBoosted"></span></p>
 </div>
 
-<script>
-function boostApp() {
+</div>
 
-    var options = {
-        "key": "rzp_test_YOURKEYHERE",  // 🔥 Yaha apni Razorpay Test Key ID daalo
-        "amount": 19900, // 199 rupees (paise me)
-        "currency": "INR",
-        "name": "Bharat App Store",
-        "description": "1 Month Boost Plan",
-        "image": "https://cdn-icons-png.flaticon.com/512/906/906175.png",
-        "handler": function (response){
-            alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
-        },
-        "theme": {
-            "color": "#1a73e8"
-        }
-    };
+<script type="module">
 
-    var rzp1 = new Razorpay(options);
-    rzp1.open();
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const firebaseConfig={
+apiKey:"YOUR_API_KEY",
+authDomain:"YOUR_AUTH_DOMAIN",
+projectId:"YOUR_PROJECT_ID",
+storageBucket:"YOUR_STORAGE_BUCKET",
+appId:"YOUR_APP_ID"
+};
+
+const ADMIN_EMAIL="yourgmail@gmail.com";
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+const storage=getStorage(app);
+const provider=new GoogleAuthProvider();
+
+let currentUser=null;
+
+loginBtn.onclick=()=>signInWithPopup(auth,provider);
+logoutBtn.onclick=()=>signOut(auth);
+
+onAuthStateChanged(auth,user=>{
+if(user){
+currentUser=user;
+welcome.innerText="Welcome "+user.displayName;
+loginBtn.style.display="none";
+logoutBtn.style.display="inline-block";
+}else{
+currentUser=null;
+welcome.innerText="";
+loginBtn.style.display="inline-block";
+logoutBtn.style.display="none";
 }
-</script>
+loadApps();
+});
 
+uploadBtn.onclick=async()=>{
+if(!currentUser) return alert("Login first");
+const file=appFile.files[0];
+if(!file) return alert("Select file");
+
+const storageRef=ref(storage,"apps/"+file.name);
+await uploadBytes(storageRef,file);
+const url=await getDownloadURL(storageRef);
+
+await addDoc(collection(db,"apps"),{
+name:appName.value,
+description:appDesc.value,
+category:appCategory.value,
+fileURL:url,
+developerEmail:currentUser.email,
+rating:0,
+totalRatings:0,
+downloads:0,
+boosted:false
+});
+
+alert("Uploaded Successfully");
+loadApps();
+};
+
+async function loadApps(){
+approvedApps.innerHTML="";
+myApps.innerHTML="";
+
+const snapshot=await getDocs(collection(db,"apps"));
+let totalD=0,totalB=0;
+let apps=[];
+
+snapshot.forEach(docSnap=>{
+let d=docSnap.data();
+d.id=docSnap.id;
+apps.push(d);
+});
+
+apps.forEach(app=>{
+totalD+=app.downloads||0;
+if(app.boosted) totalB++;
+});
+
+totalApps.innerText=apps.length;
+totalDownloads.innerText=totalD;
+totalBoosted.innerText=totalB;
+
+if(currentUser && currentUser.email===ADMIN_EMAIL){
+adminSection.style.display="block";
+}
+
+let searchText=searchInput.value.toLowerCase();
+
+apps
+.filter(a=>a.name.toLowerCase().includes(searchText))
+.forEach(app=>{
+approvedApps.innerHTML+=`
+<div class="card">
+${app.boosted?'<div class="boost-badge">🔥 BOOSTED</div>':''}
+<h4>${app.name}</h4>
+<p>${app.category}</p>
+<p>⭐ ${app.rating.toFixed(1)}</p>
+<p>📥 ${app.downloads}</p>
+<a href="${app.fileURL}" target="_blank">Download</a><br>
+<button onclick="boostApp('${app.id}')">Boost</button>
+${currentUser && currentUser.email===ADMIN_EMAIL?
+`<button onclick="deleteApp('${app.id}')">Delete</button>`:""}
+</div>`;
+});
+
+if(currentUser){
+apps
+.filter(a=>a.developerEmail===currentUser.email)
+.forEach(app=>{
+myApps.innerHTML+=`
+<div class="card">
+${app.boosted?'<div class="boost-badge">🔥 BOOSTED</div>':''}
+<h4>${app.name}</h4>
+<p>📥 ${app.downloads}</p>
+<button onclick="deleteApp('${app.id}')">Delete</button>
+</div>`;
+});
+}
+}
+
+window.boostApp=async(id)=>{
+await updateDoc(doc(db,"apps",id),{boosted:true});
+alert("Boost Activated");
+loadApps();
+};
+
+window.deleteApp=async(id)=>{
+await deleteDoc(doc(db,"apps",id));
+alert("Deleted");
+loadApps();
+};
+
+searchInput.oninput=()=>loadApps();
+
+window.startVoice=()=>{
+const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
+recognition.start();
+recognition.onresult=(e)=>{
+searchInput.value=e.results[0][0].transcript;
+loadApps();
+};
+};
+
+</script>
 </body>
 </html>
