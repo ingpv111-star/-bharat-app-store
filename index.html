@@ -13,14 +13,20 @@
     }
 
     .container {
-      margin-top: 100px;
+      margin-top: 50px;
       background: white;
-      width: 400px;
+      width: 500px;
       margin-left: auto;
       margin-right: auto;
       padding: 30px;
       border-radius: 15px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    input, textarea {
+      width: 90%;
+      padding: 8px;
+      margin: 5px;
     }
 
     button {
@@ -29,88 +35,124 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 15px;
     }
 
-    #loginBtn {
-      background: #4285F4;
-      color: white;
-    }
+    #loginBtn { background: #4285F4; color: white; }
+    #logoutBtn { background: #d9534f; color: white; }
+    #uploadBtn { background: green; color: white; }
 
-    #logoutBtn {
-      background: #d9534f;
-      color: white;
-    }
-
-    h1 {
-      margin-bottom: 20px;
+    .app-card {
+      background: #f5f5f5;
+      padding: 10px;
+      margin: 10px;
+      border-radius: 10px;
     }
   </style>
-
 </head>
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <h1>🇮🇳 Bharat AI App Store</h1>
+  <h1>🇮🇳 Bharat AI App Store</h1>
 
-    <button id="loginBtn">Login with Google</button>
-    <button id="logoutBtn" style="display:none;">Logout</button>
+  <button id="loginBtn">Login with Google</button>
+  <button id="logoutBtn" style="display:none;">Logout</button>
 
-    <h2 id="welcome"></h2>
+  <h2 id="welcome"></h2>
 
-    <h3>Available Apps</h3>
-    <div id="apps"></div>
-
+  <div id="uploadSection" style="display:none;">
+    <h3>Upload Your App</h3>
+    <input type="text" id="appName" placeholder="App Name" />
+    <textarea id="appDesc" placeholder="App Description"></textarea>
+    <button id="uploadBtn">Upload App</button>
   </div>
 
-  <script type="module">
+  <h3>Available Apps</h3>
+  <div id="apps"></div>
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
-      authDomain: "bharat-app-store-8a633.firebaseapp.com",
-      projectId: "bharat-app-store-8a633",
-      storageBucket: "bharat-app-store-8a633.firebasestorage.app",
-      messagingSenderId: "884921246902",
-      appId: "1:884921246902:web:4dcd9e8f1413be24bd7217",
-      measurementId: "G-PNK79SQ903"
-    };
+<script type="module">
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const welcome = document.getElementById("welcome");
+const firebaseConfig = {
+  apiKey: "AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
+  authDomain: "bharat-app-store-8a633.firebaseapp.com",
+  projectId: "bharat-app-store-8a633",
+  storageBucket: "bharat-app-store-8a633.firebasestorage.app",
+  messagingSenderId: "884921246902",
+  appId: "1:884921246902:web:4dcd9e8f1413be24bd7217"
+};
 
-    loginBtn.onclick = () => {
-      signInWithPopup(auth, provider)
-        .catch((error) => {
-          alert("Login Error: " + error.message);
-        });
-    };
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
 
-    logoutBtn.onclick = () => {
-      signOut(auth);
-    };
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const welcome = document.getElementById("welcome");
+const uploadSection = document.getElementById("uploadSection");
+const uploadBtn = document.getElementById("uploadBtn");
+const appsDiv = document.getElementById("apps");
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        welcome.innerHTML = "Welcome " + user.displayName + " 🎉";
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline";
-      } else {
-        welcome.innerHTML = "";
-        loginBtn.style.display = "inline";
-        logoutBtn.style.display = "none";
-      }
+loginBtn.onclick = () => {
+  signInWithPopup(auth, provider);
+};
+
+logoutBtn.onclick = () => {
+  signOut(auth);
+};
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    welcome.innerHTML = "Welcome " + user.displayName + " 🎉";
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "inline";
+    uploadSection.style.display = "block";
+    loadApps();
+  } else {
+    welcome.innerHTML = "";
+    loginBtn.style.display = "inline";
+    logoutBtn.style.display = "none";
+    uploadSection.style.display = "none";
+  }
+});
+
+uploadBtn.onclick = async () => {
+  const name = document.getElementById("appName").value;
+  const desc = document.getElementById("appDesc").value;
+
+  if(name && desc){
+    await addDoc(collection(db, "apps"), {
+      name: name,
+      description: desc
     });
+    alert("App Uploaded Successfully 🚀");
+    loadApps();
+  } else {
+    alert("Please fill all fields");
+  }
+};
 
-  </script>
+async function loadApps(){
+  appsDiv.innerHTML = "";
+  const querySnapshot = await getDocs(collection(db, "apps"));
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    appsDiv.innerHTML += `
+      <div class="app-card">
+        <h4>${data.name}</h4>
+        <p>${data.description}</p>
+      </div>
+    `;
+  });
+}
+
+</script>
 
 </body>
 </html>
