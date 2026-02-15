@@ -1,265 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>🇮🇳 Bharat AI App Store – PRO</title>
+window.boostApp = async (appId)=>{
 
-<style>
-body{
-margin:0;
-font-family:Arial;
-background:linear-gradient(to right,#ff9933,#ffffff,#138808);
-text-align:center;
+if(!currentUser){
+alert("Login first");
+return;
 }
-.container{
-max-width:1200px;
-margin:20px auto;
-background:white;
-padding:20px;
-border-radius:15px;
-}
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-gap:15px;
-margin-bottom:20px;
-}
-.card{
-background:#f2f2f2;
-padding:15px;
-border-radius:10px;
-cursor:pointer;
-position:relative;
-transition:0.3s;
-}
-.card:hover{ transform:scale(1.03); }
-.boost-badge{
-position:absolute;
-top:10px;
-right:10px;
-background:orange;
-color:white;
-padding:4px 8px;
-border-radius:6px;
-font-size:12px;
-}
-.admin-panel{
-background:#222;
-color:white;
-padding:15px;
-border-radius:10px;
-margin-top:20px;
-}
-button{
-padding:6px 12px;
-margin:5px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-}
-input, textarea, select{
-padding:6px;
-margin:5px;
-width:250px;
-}
-</style>
-</head>
-<body>
 
-<div class="container">
+const options = {
+key: "RAZORPAY_KEY_ID", // apni key daalo
+amount: 19900, // ₹199
+currency: "INR",
+name: "Bharat AI App Store",
+description: "1 Month Boost",
+image: "https://yourlogo.png",
+prefill: {
+name: currentUser.displayName,
+email: currentUser.email
+},
+theme: {
+color: "#138808"
+},
+handler: async function (response){
 
-<h1>🇮🇳 Bharat AI App Store – PRO</h1>
+let expiry = new Date();
+expiry.setDate(expiry.getDate() + 30);
 
-<button id="loginBtn">Login</button>
-<button id="logoutBtn" style="display:none;">Logout</button>
-<h3 id="welcome"></h3>
+await updateDoc(doc(db,"apps",appId),{
+boosted:true,
+boostExpiry:expiry,
+paidBoost:true,
+paymentId:response.razorpay_payment_id
+});
 
-<hr>
-
-<!-- SEARCH -->
-<h3>🔎 Search Apps</h3>
-<input id="searchInput" placeholder="Search app name...">
-<button onclick="startVoice()">🎤 Voice</button>
-
-<hr>
-
-<h3>Upload App</h3>
-<input id="appName" placeholder="App Name"><br>
-<textarea id="appDesc" placeholder="Description"></textarea><br>
-<select id="appCategory">
-<option>AI</option>
-<option>Education</option>
-<option>Finance</option>
-<option>Tools</option>
-<option>Entertainment</option>
-</select><br>
-<input type="file" id="appFile"><br>
-<button id="uploadBtn">Submit</button>
-
-<hr>
-
-<h2>📂 All Apps</h2>
-<div class="grid" id="approvedApps"></div>
-
-<hr>
-
-<h2>🧑‍💻 My Apps</h2>
-<div class="grid" id="myApps"></div>
-
-<div id="adminSection" style="display:none;" class="admin-panel">
-<h2>🛡 ADMIN PANEL</h2>
-<p>Total Apps: <span id="totalApps"></span></p>
-<p>Total Downloads: <span id="totalDownloads"></span></p>
-<p>Total Boosted Apps: <span id="totalBoosted"></span></p>
-<p>Estimated Revenue: ₹<span id="estimatedRevenue"></span></p>
-</div>
-
-</div>
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-
-const firebaseConfig={
-apiKey:"YOUR_API_KEY",
-authDomain:"YOUR_AUTH_DOMAIN",
-projectId:"YOUR_PROJECT_ID",
-storageBucket:"YOUR_STORAGE_BUCKET",
-appId:"YOUR_APP_ID"
-};
-
-const ADMIN_EMAIL = "yourgmail@gmail.com";
-
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
-const storage=getStorage(app);
-const provider=new GoogleAuthProvider();
-
-let currentUser=null;
-
-loginBtn.onclick=()=>signInWithPopup(auth,provider);
-logoutBtn.onclick=()=>signOut(auth);
-
-onAuthStateChanged(auth,(user)=>{
-currentUser=user;
-if(user){
-welcome.innerHTML="Welcome "+user.displayName;
-logoutBtn.style.display="inline";
-loginBtn.style.display="none";
+alert("🔥 Boost Activated for 30 Days");
 loadApps();
-}else{
-logoutBtn.style.display="none";
-loginBtn.style.display="inline";
 }
-});
-
-uploadBtn.onclick=async()=>{
-if(!currentUser) return alert("Login first");
-const file=appFile.files[0];
-const storageRef=ref(storage,"apps/"+file.name);
-await uploadBytes(storageRef,file);
-const url=await getDownloadURL(storageRef);
-
-await addDoc(collection(db,"apps"),{
-name:appName.value,
-description:appDesc.value,
-category:appCategory.value,
-fileURL:url,
-developerEmail:currentUser.email,
-rating:0,
-totalRatings:0,
-downloads:0,
-boosted:false
-});
-
-alert("Uploaded");
-loadApps();
 };
 
-async function loadApps(){
-approvedApps.innerHTML="";
-myApps.innerHTML="";
+const rzp = new Razorpay(options);
+rzp.open();
 
-const snapshot=await getDocs(collection(db,"apps"));
-let totalD=0, totalB=0;
-let apps=[];
-
-snapshot.forEach(docSnap=>{
-let d=docSnap.data();
-d.id=docSnap.id;
-apps.push(d);
-});
-
-apps.forEach(app=>{
-totalD+=app.downloads||0;
-if(app.boosted) totalB++;
-});
-
-totalApps.innerText=apps.length;
-totalDownloads.innerText=totalD;
-totalBoosted.innerText=totalB;
-estimatedRevenue.innerText=(totalB*199);
-
-if(currentUser && currentUser.email===ADMIN_EMAIL){
-adminSection.style.display="block";
-}
-
-let searchText=searchInput.value.toLowerCase();
-
-apps
-.filter(a=>a.name.toLowerCase().includes(searchText))
-.forEach(app=>{
-approvedApps.innerHTML+=`
-<div class="card">
-${app.boosted?'<div class="boost-badge">🔥 BOOSTED</div>':''}
-<h4>${app.name}</h4>
-<p>${app.category}</p>
-<p>📥 ${app.downloads}</p>
-<button onclick="boostApp('${app.id}')">Boost</button>
-${currentUser && currentUser.email===ADMIN_EMAIL ? 
-`<button onclick="deleteApp('${app.id}')">Delete</button>`:""}
-</div>`;
-});
-
-if(currentUser){
-apps.filter(a=>a.developerEmail===currentUser.email)
-.forEach(app=>{
-myApps.innerHTML+=`
-<div class="card">
-<h4>${app.name}</h4>
-<p>📥 ${app.downloads}</p>
-<button onclick="deleteApp('${app.id}')">Delete</button>
-</div>`;
-});
-}
-}
-
-searchInput.oninput=()=>loadApps();
-
-window.startVoice=()=>{
-const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
-recognition.start();
-recognition.onresult=(e)=>{
-searchInput.value=e.results[0][0].transcript;
-loadApps();
 };
-};
-
-window.boostApp=async(id)=>{
-await updateDoc(doc(db,"apps",id),{boosted:true});
-alert("Boost Activated (Future Paid Ready)");
-loadApps();
-};
-
-window.deleteApp=async(id)=>{
-await deleteDoc(doc(db,"apps",id));
-loadApps();
-};
-
-</script>
-</body>
-</html>
