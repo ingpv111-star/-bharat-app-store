@@ -1,104 +1,115 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>🇮🇳 Bharat AI App Store</title>
-  <meta charset="UTF-8" />
+<title>🇮🇳 Bharat AI App Store</title>
+<meta charset="UTF-8" />
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to right, #ff9933, #ffffff, #138808);
-      text-align: center;
-    }
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(to right,#ff9933,#ffffff,#138808);
+  text-align:center;
+}
 
-    .container {
-      margin-top: 40px;
-      background: white;
-      width: 650px;
-      margin-left: auto;
-      margin-right: auto;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    }
+.container{
+  width:90%;
+  max-width:1000px;
+  margin:40px auto;
+  background:white;
+  padding:30px;
+  border-radius:15px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
 
-    input, textarea, select {
-      width: 90%;
-      padding: 8px;
-      margin: 5px;
-    }
+input,textarea,select{
+  width:90%;
+  padding:8px;
+  margin:5px;
+}
 
-    button {
-      padding: 8px 15px;
-      margin: 5px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+button{
+  padding:8px 15px;
+  margin:5px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
 
-    #loginBtn { background: #4285F4; color: white; }
-    #logoutBtn { background: #d9534f; color: white; }
-    #uploadBtn { background: green; color: white; }
+#loginBtn{background:#4285F4;color:white;}
+#logoutBtn{background:#d9534f;color:white;}
+#uploadBtn{background:green;color:white;}
 
-    .delete-btn {
-      background: crimson;
-      color: white;
-    }
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:15px;
+  margin-top:20px;
+}
 
-    .download-btn {
-      background: #138808;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 6px;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 5px;
-    }
+.app-card{
+  background:#f5f5f5;
+  padding:15px;
+  border-radius:12px;
+  text-align:left;
+}
 
-    .app-card {
-      background: #f5f5f5;
-      padding: 15px;
-      margin: 15px;
-      border-radius: 12px;
-      text-align: left;
-    }
+.app-card img{
+  width:100%;
+  height:120px;
+  object-fit:cover;
+  border-radius:10px;
+}
 
-  </style>
+.download-btn{
+  background:#138808;
+  color:white;
+  padding:6px 12px;
+  border-radius:6px;
+  text-decoration:none;
+  display:inline-block;
+  margin-top:5px;
+}
+
+.delete-btn{
+  background:crimson;
+  color:white;
+}
+
+</style>
 </head>
 <body>
 
 <div class="container">
 
-  <h1>🇮🇳 Bharat AI App Store</h1>
+<h1>🇮🇳 Bharat AI App Store</h1>
 
-  <button id="loginBtn">Login with Google</button>
-  <button id="logoutBtn" style="display:none;">Logout</button>
+<button id="loginBtn">Login</button>
+<button id="logoutBtn" style="display:none;">Logout</button>
 
-  <h2 id="welcome"></h2>
+<h3 id="welcome"></h3>
 
-  <div id="uploadSection" style="display:none;">
-    <h3>Upload Your App</h3>
+<input type="text" id="search" placeholder="🔍 Search Apps..." />
 
-    <input type="text" id="appName" placeholder="App Name" />
-    <textarea id="appDesc" placeholder="App Description"></textarea>
+<div id="uploadSection" style="display:none;">
+<h3>Upload App</h3>
+<input type="text" id="appName" placeholder="App Name">
+<textarea id="appDesc" placeholder="Description"></textarea>
+<select id="appCategory">
+<option value="">Select Category</option>
+<option>AI</option>
+<option>Education</option>
+<option>Finance</option>
+<option>Tools</option>
+<option>Entertainment</option>
+</select>
+<input type="text" id="appLink" placeholder="Download Link">
+<input type="text" id="appLogo" placeholder="Logo Image URL">
+<input type="number" id="appRating" placeholder="Rating (1-5)">
+<button id="uploadBtn">Upload</button>
+</div>
 
-    <select id="appCategory">
-      <option value="">Select Category</option>
-      <option>AI</option>
-      <option>Education</option>
-      <option>Finance</option>
-      <option>Tools</option>
-      <option>Entertainment</option>
-    </select>
-
-    <input type="text" id="appLink" placeholder="Download Link" />
-
-    <button id="uploadBtn">Upload App</button>
-  </div>
-
-  <h3>Available Apps</h3>
-  <div id="apps"></div>
+<div class="grid" id="apps"></div>
 
 </div>
 
@@ -106,106 +117,123 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
-  authDomain: "bharat-app-store-8a633.firebaseapp.com",
-  projectId: "bharat-app-store-8a633",
-  storageBucket: "bharat-app-store-8a633.firebasestorage.app",
-  messagingSenderId: "884921246902",
-  appId: "1:884921246902:web:4dcd9e8f1413be24bd7217"
+const firebaseConfig={
+apiKey:"AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
+authDomain:"bharat-app-store-8a633.firebaseapp.com",
+projectId:"bharat-app-store-8a633",
+storageBucket:"bharat-app-store-8a633.firebasestorage.app",
+messagingSenderId:"884921246902",
+appId:"1:884921246902:web:4dcd9e8f1413be24bd7217"
 };
 
-const ADMIN_EMAIL = "ingpv111@gmail.com"; // 👑 Your Gmail
+const ADMIN_EMAIL="ingpv111@gmail.com";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+const provider=new GoogleAuthProvider();
 
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const welcome = document.getElementById("welcome");
-const uploadSection = document.getElementById("uploadSection");
-const uploadBtn = document.getElementById("uploadBtn");
-const appsDiv = document.getElementById("apps");
+const loginBtn=document.getElementById("loginBtn");
+const logoutBtn=document.getElementById("logoutBtn");
+const uploadSection=document.getElementById("uploadSection");
+const uploadBtn=document.getElementById("uploadBtn");
+const appsDiv=document.getElementById("apps");
+const searchInput=document.getElementById("search");
 
-let currentUser = null;
+let currentUser=null;
+let allApps=[];
 
-loginBtn.onclick = () => signInWithPopup(auth, provider);
-logoutBtn.onclick = () => signOut(auth);
+loginBtn.onclick=()=>signInWithPopup(auth,provider);
+logoutBtn.onclick=()=>signOut(auth);
 
-onAuthStateChanged(auth, (user) => {
-  currentUser = user;
-
-  if (user) {
-    welcome.innerHTML = "Welcome " + user.displayName + " 👑";
-    loginBtn.style.display = "none";
-    logoutBtn.style.display = "inline";
-
-    if(user.email === ADMIN_EMAIL){
-      uploadSection.style.display = "block";
-    } else {
-      uploadSection.style.display = "none";
-    }
-
-    loadApps();
-  } else {
-    welcome.innerHTML = "";
-    loginBtn.style.display = "inline";
-    logoutBtn.style.display = "none";
-    uploadSection.style.display = "none";
-  }
+onAuthStateChanged(auth,(user)=>{
+currentUser=user;
+if(user){
+loginBtn.style.display="none";
+logoutBtn.style.display="inline";
+if(user.email===ADMIN_EMAIL){
+uploadSection.style.display="block";
+}
+loadApps();
+}else{
+loginBtn.style.display="inline";
+logoutBtn.style.display="none";
+uploadSection.style.display="none";
+}
 });
 
-uploadBtn.onclick = async () => {
-  const name = document.getElementById("appName").value;
-  const desc = document.getElementById("appDesc").value;
-  const category = document.getElementById("appCategory").value;
-  const link = document.getElementById("appLink").value;
+uploadBtn.onclick=async()=>{
+const name=appName.value;
+const desc=appDesc.value;
+const category=appCategory.value;
+const link=appLink.value;
+const logo=appLogo.value;
+const rating=appRating.value;
 
-  if(name && desc && category && link){
-    await addDoc(collection(db, "apps"), {
-      name,
-      description: desc,
-      category,
-      link
-    });
-    alert("App Uploaded 🚀");
-    loadApps();
-  } else {
-    alert("Fill all fields");
-  }
+if(name&&desc&&category&&link){
+await addDoc(collection(db,"apps"),{
+name,description:desc,category,link,
+logo:logo||"",
+rating:rating||"0",
+downloads:0
+});
+loadApps();
+}
 };
 
 async function loadApps(){
-  appsDiv.innerHTML = "";
-  const querySnapshot = await getDocs(collection(db, "apps"));
-  querySnapshot.forEach((docSnap) => {
-    const data = docSnap.data();
-    const id = docSnap.id;
-
-    appsDiv.innerHTML += `
-      <div class="app-card">
-        <h4>${data.name}</h4>
-        <p><b>Category:</b> ${data.category || "General"}</p>
-        <p>${data.description}</p>
-        <a class="download-btn" href="${data.link}" target="_blank">Download</a>
-        ${currentUser && currentUser.email === ADMIN_EMAIL ? 
-          `<button class="delete-btn" onclick="deleteApp('${id}')">Delete</button>` 
-          : ""}
-      </div>
-    `;
-  });
+appsDiv.innerHTML="";
+allApps=[];
+const snapshot=await getDocs(collection(db,"apps"));
+snapshot.forEach(docSnap=>{
+const data=docSnap.data();
+data.id=docSnap.id;
+allApps.push(data);
+});
+displayApps(allApps);
 }
 
-window.deleteApp = async function(id){
-  await deleteDoc(doc(db, "apps", id));
-  loadApps();
+function displayApps(apps){
+appsDiv.innerHTML="";
+apps.forEach(app=>{
+appsDiv.innerHTML+=`
+<div class="app-card">
+<img src="${app.logo||'https://via.placeholder.com/300x120'}">
+<h4>${app.name}</h4>
+<p>${app.description}</p>
+<p><b>Category:</b> ${app.category}</p>
+<p>⭐ ${app.rating}</p>
+<p>⬇ ${app.downloads||0} downloads</p>
+<a class="download-btn" href="${app.link}" target="_blank" onclick="increaseDownload('${app.id}')">Download</a>
+${currentUser&&currentUser.email===ADMIN_EMAIL?
+`<button class="delete-btn" onclick="deleteApp('${app.id}')">Delete</button>`:""}
+</div>
+`;
+});
+}
+
+searchInput.oninput=()=>{
+const value=searchInput.value.toLowerCase();
+const filtered=allApps.filter(app=>
+app.name.toLowerCase().includes(value)
+);
+displayApps(filtered);
+};
+
+window.deleteApp=async(id)=>{
+await deleteDoc(doc(db,"apps",id));
+loadApps();
+};
+
+window.increaseDownload=async(id)=>{
+const appRef=doc(db,"apps",id);
+await updateDoc(appRef,{
+downloads:increment(1)
+});
 };
 
 </script>
-
 </body>
 </html>
