@@ -94,7 +94,7 @@ width:300px;
 <input type="file" id="appFile"><br>
 <button id="uploadBtn">Submit</button>
 
-<h2>🔥 Trending Apps</h2>
+<h2>🔥 Top Trending</h2>
 <div class="grid" id="trendingApps"></div>
 
 <h2>📂 All Apps</h2>
@@ -116,7 +116,7 @@ width:300px;
 <button onclick="rateApp(5)">⭐5</button>
 
 <br><br>
-<button onclick="boostApp()">🚀 Boost This App</button>
+<button onclick="boostApp()">🚀 Boost (Free 30 Days)</button>
 
 <br><br>
 <button onclick="closeModal()">Close</button>
@@ -131,10 +131,10 @@ import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc, serv
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig={
-apiKey:"YOUR_KEY",
-authDomain:"YOUR_DOMAIN",
-projectId:"YOUR_PROJECT",
-storageBucket:"YOUR_BUCKET",
+apiKey:"YOUR_API_KEY",
+authDomain:"YOUR_AUTH_DOMAIN",
+projectId:"YOUR_PROJECT_ID",
+storageBucket:"YOUR_STORAGE_BUCKET",
 appId:"YOUR_APP_ID"
 };
 
@@ -182,7 +182,6 @@ rating:0,
 totalRatings:0,
 downloads:0,
 boosted:false,
-boostMonth:"",
 boostExpiry:null,
 createdAt:serverTimestamp()
 });
@@ -198,12 +197,15 @@ trendingApps.innerHTML="";
 const snapshot=await getDocs(collection(db,"apps"));
 let apps=[];
 
-snapshot.forEach(docSnap=>{
+for(const docSnap of snapshot.docs){
 let data=docSnap.data();
 data.id=docSnap.id;
 
 if(data.boostExpiry && data.boostExpiry.toDate() < new Date()){
-updateDoc(doc(db,"apps",data.id),{boosted:false});
+await updateDoc(doc(db,"apps",data.id),{
+boosted:false,
+boostExpiry:null
+});
 data.boosted=false;
 }
 
@@ -215,20 +217,20 @@ let score=
 
 data.score=score;
 apps.push(data);
-});
+}
 
 apps.sort((a,b)=>b.score-a.score);
 
 apps.slice(0,5).forEach(app=>{
-trendingApps.innerHTML+=cardHTML(app,true);
+trendingApps.innerHTML+=cardHTML(app);
 });
 
 apps.forEach(app=>{
-approvedApps.innerHTML+=cardHTML(app,false);
+approvedApps.innerHTML+=cardHTML(app);
 });
 }
 
-function cardHTML(app,isTrending){
+function cardHTML(app){
 return `
 <div class="card" onclick="openModal('${app.id}','${app.name}','${app.description}','${app.fileURL}')">
 ${app.boosted?'<div class="boost-badge">🔥 BOOSTED</div>':''}
@@ -280,13 +282,14 @@ closeModal();
 window.boostApp=async()=>{
 if(!currentUser) return alert("Login first");
 
-const month=new Date().getMonth()+1+"-"+new Date().getFullYear();
 const refDoc=doc(db,"apps",currentAppId);
 const snap=await getDoc(refDoc);
 let d=snap.data();
 
-if(d.boostMonth===month){
-alert("Already boosted this month");
+const now=new Date();
+
+if(d.boostExpiry && d.boostExpiry.toDate()>now){
+alert("Already boosted for 30 days");
 return;
 }
 
@@ -295,11 +298,10 @@ expiry.setDate(expiry.getDate()+30);
 
 await updateDoc(refDoc,{
 boosted:true,
-boostMonth:month,
 boostExpiry:expiry
 });
 
-alert("Boost Activated 🚀");
+alert("🔥 Boost Activated (Free 30 Days)");
 loadApps();
 closeModal();
 };
