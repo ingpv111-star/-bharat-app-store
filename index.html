@@ -3,95 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <title>Bharat AI App Store</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body {
-      font-family: Arial;
-      background: #f5f5f5;
-      text-align: center;
-      margin: 0;
-      padding: 20px;
-    }
-
-    h1 {
-      color: #0d6efd;
-    }
-
-    button {
-      padding: 10px 20px;
-      background: #0d6efd;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .card {
-      background: white;
-      padding: 15px;
-      margin-top: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-  </style>
 </head>
 
 <body>
 
-<h1>🇮🇳 Bharat AI App Store</h1>
+  <h1>🇮🇳 Bharat AI App Store</h1>
 
-<button onclick="login()">Login with Google</button>
+  <button onclick="login()">Login with Google</button>
+  <button onclick="logout()">Logout</button>
 
-<div id="userInfo" class="card"></div>
+  <p id="userInfo"></p>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup } 
-  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs }
-  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  <h2>Available Apps</h2>
+  <div id="appList"></div>
 
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_BUCKET",
-    messagingSenderId: "YOUR_MSG_ID",
-    appId: "YOUR_APP_ID"
-  };
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+    import { 
+      getAuth, 
+      GoogleAuthProvider, 
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
-  const db = getFirestore(app);
+    import { 
+      getFirestore, 
+      collection, 
+      getDocs 
+    } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  window.login = async function() {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+    const firebaseConfig = {
+      apiKey: "PASTE_YOUR_REAL_KEY",
+      authDomain: "PASTE_YOUR_REAL_DOMAIN",
+      projectId: "PASTE_YOUR_REAL_PROJECT_ID",
+      storageBucket: "PASTE_YOUR_REAL_BUCKET",
+      messagingSenderId: "PASTE_YOUR_REAL_MSG_ID",
+      appId: "PASTE_YOUR_REAL_APP_ID"
+    };
 
-      document.getElementById("userInfo").innerHTML =
-        "<h3>Welcome " + user.displayName + " 🎉</h3>";
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    const db = getFirestore(app);
 
-      loadApps();
-
-    } catch (error) {
-      alert("Login Error: " + error.message);
+    window.login = function() {
+      signInWithPopup(auth, provider)
+        .catch((error) => {
+          alert("Login Error: " + error.message);
+        });
     }
-  }
 
-  async function loadApps() {
-    const querySnapshot = await getDocs(collection(db, "apps"));
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      document.getElementById("userInfo").innerHTML +=
-        "<p><b>" + data.name + "</b><br>" + data.description + "</p>";
+    window.logout = function() {
+      signOut(auth);
+      document.getElementById("userInfo").innerHTML = "";
+      document.getElementById("appList").innerHTML = "";
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("userInfo").innerHTML =
+          "Welcome " + user.displayName + " 🎉";
+        loadApps();
+      }
     });
-  }
 
-</script>
+    async function loadApps() {
+      const querySnapshot = await getDocs(collection(db, "apps"));
+      let output = "";
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        output += `
+          <div style="border:1px solid gray; padding:10px; margin:10px;">
+            <h3>${data.name}</h3>
+            <p>${data.description}</p>
+          </div>
+        `;
+      });
+
+      document.getElementById("appList").innerHTML = output;
+    }
+
+  </script>
 
 </body>
 </html>
