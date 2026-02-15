@@ -3,26 +3,72 @@
 <head>
   <title>🇮🇳 Bharat AI App Store</title>
   <meta charset="UTF-8" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #ff9933, #ffffff, #138808);
+      text-align: center;
+    }
+
+    .container {
+      margin-top: 100px;
+      background: white;
+      width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    #loginBtn {
+      background: #4285F4;
+      color: white;
+    }
+
+    #logoutBtn {
+      background: #d9534f;
+      color: white;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+  </style>
+
 </head>
 <body>
 
-  <h1>🇮🇳 Bharat AI App Store</h1>
+  <div class="container">
 
-  <button id="loginBtn">Login with Google</button>
-  <button id="logoutBtn" style="display:none;">Logout</button>
+    <h1>🇮🇳 Bharat AI App Store</h1>
 
-  <h2 id="welcome"></h2>
+    <button id="loginBtn">Login with Google</button>
+    <button id="logoutBtn" style="display:none;">Logout</button>
 
-  <h3>Available Apps</h3>
-  <div id="apps"></div>
+    <h2 id="welcome"></h2>
+
+    <h3>Available Apps</h3>
+    <div id="apps"></div>
+
+  </div>
 
   <script type="module">
 
-    // Firebase CDN imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // 🔥 Your REAL Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
       authDomain: "bharat-app-store-8a633.firebaseapp.com",
@@ -33,7 +79,6 @@
       measurementId: "G-PNK79SQ903"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
@@ -42,23 +87,17 @@
     const logoutBtn = document.getElementById("logoutBtn");
     const welcome = document.getElementById("welcome");
 
-    // Login
     loginBtn.onclick = () => {
       signInWithPopup(auth, provider)
-        .then((result) => {
-          console.log("Login Success");
-        })
         .catch((error) => {
           alert("Login Error: " + error.message);
         });
     };
 
-    // Logout
     logoutBtn.onclick = () => {
       signOut(auth);
     };
 
-    // Detect user state
     onAuthStateChanged(auth, (user) => {
       if (user) {
         welcome.innerHTML = "Welcome " + user.displayName + " 🎉";
