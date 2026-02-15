@@ -15,7 +15,7 @@
     .container {
       margin-top: 40px;
       background: white;
-      width: 600px;
+      width: 650px;
       margin-left: auto;
       margin-right: auto;
       padding: 30px;
@@ -30,8 +30,8 @@
     }
 
     button {
-      padding: 10px 20px;
-      margin: 10px;
+      padding: 8px 15px;
+      margin: 5px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
@@ -41,12 +41,9 @@
     #logoutBtn { background: #d9534f; color: white; }
     #uploadBtn { background: green; color: white; }
 
-    .app-card {
-      background: #f5f5f5;
-      padding: 15px;
-      margin: 15px;
-      border-radius: 12px;
-      text-align: left;
+    .delete-btn {
+      background: crimson;
+      color: white;
     }
 
     .download-btn {
@@ -57,6 +54,14 @@
       text-decoration: none;
       display: inline-block;
       margin-top: 5px;
+    }
+
+    .app-card {
+      background: #f5f5f5;
+      padding: 15px;
+      margin: 15px;
+      border-radius: 12px;
+      text-align: left;
     }
 
   </style>
@@ -87,7 +92,7 @@
       <option>Entertainment</option>
     </select>
 
-    <input type="text" id="appLink" placeholder="Download Link (APK or Website URL)" />
+    <input type="text" id="appLink" placeholder="Download Link" />
 
     <button id="uploadBtn">Upload App</button>
   </div>
@@ -101,7 +106,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
@@ -111,6 +116,8 @@ const firebaseConfig = {
   messagingSenderId: "884921246902",
   appId: "1:884921246902:web:4dcd9e8f1413be24bd7217"
 };
+
+const ADMIN_EMAIL = "ingpv111@gmail.com"; // 👑 Your Gmail
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -124,15 +131,25 @@ const uploadSection = document.getElementById("uploadSection");
 const uploadBtn = document.getElementById("uploadBtn");
 const appsDiv = document.getElementById("apps");
 
+let currentUser = null;
+
 loginBtn.onclick = () => signInWithPopup(auth, provider);
 logoutBtn.onclick = () => signOut(auth);
 
 onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+
   if (user) {
-    welcome.innerHTML = "Welcome " + user.displayName + " 🎉";
+    welcome.innerHTML = "Welcome " + user.displayName + " 👑";
     loginBtn.style.display = "none";
     logoutBtn.style.display = "inline";
-    uploadSection.style.display = "block";
+
+    if(user.email === ADMIN_EMAIL){
+      uploadSection.style.display = "block";
+    } else {
+      uploadSection.style.display = "none";
+    }
+
     loadApps();
   } else {
     welcome.innerHTML = "";
@@ -155,29 +172,38 @@ uploadBtn.onclick = async () => {
       category,
       link
     });
-
-    alert("App Uploaded Successfully 🚀");
+    alert("App Uploaded 🚀");
     loadApps();
   } else {
-    alert("Please fill all fields");
+    alert("Fill all fields");
   }
 };
 
 async function loadApps(){
   appsDiv.innerHTML = "";
   const querySnapshot = await getDocs(collection(db, "apps"));
-  querySnapshot.forEach((doc) => {
-    const data = doc.data();
+  querySnapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    const id = docSnap.id;
+
     appsDiv.innerHTML += `
       <div class="app-card">
         <h4>${data.name}</h4>
-        <p><b>Category:</b> ${data.category}</p>
+        <p><b>Category:</b> ${data.category || "General"}</p>
         <p>${data.description}</p>
         <a class="download-btn" href="${data.link}" target="_blank">Download</a>
+        ${currentUser && currentUser.email === ADMIN_EMAIL ? 
+          `<button class="delete-btn" onclick="deleteApp('${id}')">Delete</button>` 
+          : ""}
       </div>
     `;
   });
 }
+
+window.deleteApp = async function(id){
+  await deleteDoc(doc(db, "apps", id));
+  loadApps();
+};
 
 </script>
 
