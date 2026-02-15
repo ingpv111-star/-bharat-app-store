@@ -13,13 +13,17 @@ body{
 }
 
 .container{
-  width:90%;
-  max-width:1000px;
-  margin:40px auto;
+  width:95%;
+  max-width:1200px;
+  margin:30px auto;
   background:white;
-  padding:30px;
+  padding:25px;
   border-radius:15px;
   box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+h2{
+  margin-top:30px;
 }
 
 input,textarea,select{
@@ -39,13 +43,12 @@ button{
 #loginBtn{background:#4285F4;color:white;}
 #logoutBtn{background:#d9534f;color:white;}
 #uploadBtn{background:green;color:white;}
-#voiceBtn{background:#000;color:white;}
 
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
   gap:15px;
-  margin-top:20px;
+  margin-top:15px;
 }
 
 .app-card{
@@ -77,11 +80,13 @@ button{
   color:white;
 }
 
-.search-box{
-  display:flex;
-  justify-content:center;
-  gap:10px;
+.featured{
+  background:#ffeaa7;
+  padding:20px;
+  border-radius:15px;
+  margin-bottom:25px;
 }
+
 </style>
 </head>
 <body>
@@ -92,33 +97,22 @@ button{
 
 <button id="loginBtn">Login</button>
 <button id="logoutBtn" style="display:none;">Logout</button>
-
 <h3 id="welcome"></h3>
 
-<div class="search-box">
-<input type="text" id="search" placeholder="🔍 Search Apps..." />
-<button id="voiceBtn">🎙</button>
-</div>
+<!-- Featured Section -->
+<div id="featuredSection"></div>
 
-<div id="uploadSection" style="display:none;">
-<h3>Upload App</h3>
-<input type="text" id="appName" placeholder="App Name">
-<textarea id="appDesc" placeholder="Description"></textarea>
-<select id="appCategory">
-<option value="">Select Category</option>
-<option>AI</option>
-<option>Education</option>
-<option>Finance</option>
-<option>Tools</option>
-<option>Entertainment</option>
-</select>
-<input type="text" id="appLink" placeholder="Download Link">
-<input type="text" id="appLogo" placeholder="Logo Image URL">
-<input type="number" id="appRating" placeholder="Rating (1-5)">
-<button id="uploadBtn">Upload</button>
-</div>
+<!-- Trending Section -->
+<h2>🔥 Trending Apps</h2>
+<div class="grid" id="trendingApps"></div>
 
-<div class="grid" id="apps"></div>
+<!-- Top Rated Section -->
+<h2>⭐ Top Rated Apps</h2>
+<div class="grid" id="topRatedApps"></div>
+
+<!-- All Apps -->
+<h2>📦 All Apps</h2>
+<div class="grid" id="allApps"></div>
 
 </div>
 
@@ -126,7 +120,7 @@ button{
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyChGwSmE4D-ZmvoaBfAQJVzye4WBdbg4bc",
@@ -137,8 +131,6 @@ messagingSenderId:"884921246902",
 appId:"1:884921246902:web:4dcd9e8f1413be24bd7217"
 };
 
-const ADMIN_EMAIL="ingpv111@gmail.com";
-
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const db=getFirestore(app);
@@ -146,119 +138,79 @@ const provider=new GoogleAuthProvider();
 
 const loginBtn=document.getElementById("loginBtn");
 const logoutBtn=document.getElementById("logoutBtn");
-const uploadSection=document.getElementById("uploadSection");
-const uploadBtn=document.getElementById("uploadBtn");
-const appsDiv=document.getElementById("apps");
-const searchInput=document.getElementById("search");
-const voiceBtn=document.getElementById("voiceBtn");
 const welcome=document.getElementById("welcome");
-
-let currentUser=null;
-let allApps=[];
 
 loginBtn.onclick=()=>signInWithPopup(auth,provider);
 logoutBtn.onclick=()=>signOut(auth);
 
 onAuthStateChanged(auth,(user)=>{
-currentUser=user;
 if(user){
 welcome.innerHTML="Welcome "+user.displayName+" 👑";
 loginBtn.style.display="none";
 logoutBtn.style.display="inline";
-if(user.email===ADMIN_EMAIL){
-uploadSection.style.display="block";
-}
-loadApps();
 }else{
 welcome.innerHTML="";
 loginBtn.style.display="inline";
 logoutBtn.style.display="none";
-uploadSection.style.display="none";
 }
 });
-
-uploadBtn.onclick=async()=>{
-const name=appName.value;
-const desc=appDesc.value;
-const category=appCategory.value;
-const link=appLink.value;
-const logo=appLogo.value;
-const rating=appRating.value;
-
-if(name&&desc&&category&&link){
-await addDoc(collection(db,"apps"),{
-name,description:desc,category,link,
-logo:logo||"",
-rating:rating||"0",
-downloads:0
-});
-loadApps();
-}
-};
 
 async function loadApps(){
-appsDiv.innerHTML="";
-allApps=[];
+
 const snapshot=await getDocs(collection(db,"apps"));
+let apps=[];
 snapshot.forEach(docSnap=>{
-const data=docSnap.data();
+let data=docSnap.data();
 data.id=docSnap.id;
-allApps.push(data);
+apps.push(data);
 });
-displayApps(allApps);
+
+if(apps.length===0) return;
+
+// 🔥 Trending (Most Downloaded)
+let trending=[...apps].sort((a,b)=>(b.downloads||0)-(a.downloads||0));
+
+// ⭐ Top Rated
+let topRated=[...apps].sort((a,b)=>(b.rating||0)-(a.rating||0));
+
+// 🏆 Featured (Highest Rating + Downloads)
+let featured=topRated[0];
+
+displayFeatured(featured);
+displaySection("trendingApps",trending.slice(0,4));
+displaySection("topRatedApps",topRated.slice(0,4));
+displaySection("allApps",apps);
+
 }
 
-function displayApps(apps){
-appsDiv.innerHTML="";
+function displayFeatured(app){
+if(!app) return;
+document.getElementById("featuredSection").innerHTML=`
+<div class="featured">
+<h2>🏆 Featured App</h2>
+<h3>${app.name}</h3>
+<p>${app.description}</p>
+<p>⭐ ${app.rating} | ⬇ ${app.downloads||0}</p>
+<a class="download-btn" href="${app.link}" target="_blank" onclick="increaseDownload('${app.id}')">Install Now</a>
+</div>
+`;
+}
+
+function displaySection(id,apps){
+let container=document.getElementById(id);
+container.innerHTML="";
 apps.forEach(app=>{
-appsDiv.innerHTML+=`
+container.innerHTML+=`
 <div class="app-card">
 <img src="${app.logo||'https://via.placeholder.com/300x120'}">
 <h4>${app.name}</h4>
 <p>${app.description}</p>
-<p><b>Category:</b> ${app.category}</p>
-<p>⭐ ${app.rating}</p>
-<p>⬇ ${app.downloads||0} downloads</p>
+<p>⭐ ${app.rating} | ⬇ ${app.downloads||0}</p>
 <a class="download-btn" href="${app.link}" target="_blank" onclick="increaseDownload('${app.id}')">Download</a>
-${currentUser&&currentUser.email===ADMIN_EMAIL?
-`<button class="delete-btn" onclick="deleteApp('${app.id}')">Delete</button>`:""}
 </div>
 `;
 });
 }
-
-searchInput.oninput=()=>{
-const value=searchInput.value.toLowerCase();
-const filtered=allApps.filter(app=>
-app.name.toLowerCase().includes(value)
-);
-displayApps(filtered);
-};
-
-voiceBtn.onclick=()=>{
-const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!SpeechRecognition){
-alert("Voice search not supported in this browser");
-return;
-}
-const recognition=new SpeechRecognition();
-recognition.lang="en-IN";
-recognition.start();
-recognition.onresult=(event)=>{
-const transcript=event.results[0][0].transcript;
-searchInput.value=transcript;
-const value=transcript.toLowerCase();
-const filtered=allApps.filter(app=>
-app.name.toLowerCase().includes(value)
-);
-displayApps(filtered);
-};
-};
-
-window.deleteApp=async(id)=>{
-await deleteDoc(doc(db,"apps",id));
-loadApps();
-};
 
 window.increaseDownload=async(id)=>{
 const appRef=doc(db,"apps",id);
@@ -266,6 +218,8 @@ await updateDoc(appRef,{
 downloads:increment(1)
 });
 };
+
+loadApps();
 
 </script>
 </body>
