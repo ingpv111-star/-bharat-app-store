@@ -22,6 +22,7 @@ border-radius:15px;
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
 gap:15px;
+margin-bottom:20px;
 }
 .card{
 background:#f2f2f2;
@@ -94,8 +95,24 @@ width:300px;
 <input type="file" id="appFile"><br>
 <button id="uploadBtn">Submit</button>
 
-<h2>🔥 Top Trending</h2>
-<div class="grid" id="trendingApps"></div>
+<hr>
+
+<h2>🔥 Trending - AI</h2>
+<div class="grid" id="aiApps"></div>
+
+<h2>🔥 Trending - Education</h2>
+<div class="grid" id="educationApps"></div>
+
+<h2>🔥 Trending - Finance</h2>
+<div class="grid" id="financeApps"></div>
+
+<h2>🔥 Trending - Tools</h2>
+<div class="grid" id="toolsApps"></div>
+
+<h2>🔥 Trending - Entertainment</h2>
+<div class="grid" id="entertainmentApps"></div>
+
+<hr>
 
 <h2>📂 All Apps</h2>
 <div class="grid" id="approvedApps"></div>
@@ -191,15 +208,21 @@ loadApps();
 };
 
 async function loadApps(){
-approvedApps.innerHTML="";
-trendingApps.innerHTML="";
 
-const snapshot=await getDocs(collection(db,"apps"));
+aiApps.innerHTML="";
+educationApps.innerHTML="";
+financeApps.innerHTML="";
+toolsApps.innerHTML="";
+entertainmentApps.innerHTML="";
+approvedApps.innerHTML="";
+
+const snapshot = await getDocs(collection(db,"apps"));
 let apps=[];
 
 for(const docSnap of snapshot.docs){
-let data=docSnap.data();
-data.id=docSnap.id;
+
+let data = docSnap.data();
+data.id = docSnap.id;
 
 if(data.boostExpiry && data.boostExpiry.toDate() < new Date()){
 await updateDoc(doc(db,"apps",data.id),{
@@ -209,25 +232,36 @@ boostExpiry:null
 data.boosted=false;
 }
 
-let score=
-(data.rating*3)+
-(data.totalRatings*2)+
-(data.downloads*1)+
-(data.boosted?500:0);
+let score =
+(data.rating*3) +
+(data.totalRatings*2) +
+(data.downloads*1) +
+(data.boosted ? 500 : 0);
 
-data.score=score;
+data.score = score;
 apps.push(data);
 }
 
 apps.sort((a,b)=>b.score-a.score);
 
-apps.slice(0,5).forEach(app=>{
-trendingApps.innerHTML+=cardHTML(app);
+["AI","Education","Finance","Tools","Entertainment"].forEach(category=>{
+
+let filtered = apps.filter(a=>a.category===category).slice(0,5);
+
+filtered.forEach(app=>{
+if(category==="AI") aiApps.innerHTML+=cardHTML(app);
+if(category==="Education") educationApps.innerHTML+=cardHTML(app);
+if(category==="Finance") financeApps.innerHTML+=cardHTML(app);
+if(category==="Tools") toolsApps.innerHTML+=cardHTML(app);
+if(category==="Entertainment") entertainmentApps.innerHTML+=cardHTML(app);
+});
+
 });
 
 apps.forEach(app=>{
 approvedApps.innerHTML+=cardHTML(app);
 });
+
 }
 
 function cardHTML(app){
