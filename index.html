@@ -2,37 +2,74 @@
 <html>
 <head>
     <title>Bharat App Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Razorpay Script -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            margin-top: 40px;
+        }
+
+        .btn {
+            background: #1a73e8;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background: #1558b0;
+        }
+
+        .container {
+            margin-top: 80px;
+        }
+    </style>
 </head>
 
 <body>
 
+<div class="container">
     <h1>Bharat App Store</h1>
+    <button class="btn" onclick="boostApp()">Boost App ₹199</button>
+</div>
 
-    <button onclick="boostApp()" 
-        style="padding:10px 20px; font-size:18px; background:#1e73ff; color:white; border:none; border-radius:6px;">
-        Boost App ₹199
-    </button>
+<script>
+function boostApp() {
 
-    <script>
-        function boostApp(){
-
-            var options = {
-                key: "RAZORPAY_KEY_ID",  // Yaha apna asli key dalna
-                amount: 19900,
-                currency: "INR",
-                name: "Bharat App Store",
-                description: "1 Month Boost",
-
-                handler: function (response){
-                    alert("Payment Successful: " + response.razorpay_payment_id);
-                }
-            };
-
-            var rzp = new Razorpay(options);
-            rzp.open();
+    var options = {
+        "key": "rzp_test_YOURKEYHERE",  // 🔥 Yaha apni Razorpay Test Key ID daalo
+        "amount": 19900, // 199 rupees (paise me)
+        "currency": "INR",
+        "name": "Bharat App Store",
+        "description": "1 Month Boost Plan",
+        "image": "https://cdn-icons-png.flaticon.com/512/906/906175.png",
+        "handler": function (response){
+            alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
+        },
+        "theme": {
+            "color": "#1a73e8"
         }
-    </script>
+    };
+
+    var rzp1 = new Razorpay(options);
+    rzp1.open();
+}
+</script>
 
 </body>
 </html>
