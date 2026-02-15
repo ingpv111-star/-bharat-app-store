@@ -1,13 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Bharat App Store</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <link rel="stylesheet" href="style.css">
-    
-    <!-- Razorpay Script -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 
@@ -15,9 +9,30 @@
 
     <h1>Bharat App Store</h1>
 
-    <button onclick="boostApp(1)">Boost App ₹199</button>
+    <button onclick="boostApp()" 
+        style="padding:10px 20px; font-size:18px; background:#1e73ff; color:white; border:none; border-radius:6px;">
+        Boost App ₹199
+    </button>
 
-    <script src="script.js"></script>
+    <script>
+        function boostApp(){
+
+            var options = {
+                key: "RAZORPAY_KEY_ID",  // Yaha apna asli key dalna
+                amount: 19900,
+                currency: "INR",
+                name: "Bharat App Store",
+                description: "1 Month Boost",
+
+                handler: function (response){
+                    alert("Payment Successful: " + response.razorpay_payment_id);
+                }
+            };
+
+            var rzp = new Razorpay(options);
+            rzp.open();
+        }
+    </script>
 
 </body>
 </html>
