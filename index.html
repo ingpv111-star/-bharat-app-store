@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>🇮🇳 Bharat AI App Store</title>
+<title>🇮🇳 Bharat AI App Store – PRO</title>
 
 <style>
 body{
@@ -32,9 +32,7 @@ cursor:pointer;
 position:relative;
 transition:0.3s;
 }
-.card:hover{
-transform:scale(1.03);
-}
+.card:hover{ transform:scale(1.03); }
 .boost-badge{
 position:absolute;
 top:10px;
@@ -45,6 +43,13 @@ padding:4px 8px;
 border-radius:6px;
 font-size:12px;
 }
+.admin-panel{
+background:#222;
+color:white;
+padding:15px;
+border-radius:10px;
+margin-top:20px;
+}
 button{
 padding:6px 12px;
 margin:5px;
@@ -52,25 +57,10 @@ border:none;
 border-radius:8px;
 cursor:pointer;
 }
-.modal{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.6);
-justify-content:center;
-align-items:center;
-}
-.modal-content{
-background:white;
-padding:20px;
-border-radius:12px;
-width:300px;
-}
-hr{
-margin:30px 0;
+input, textarea, select{
+padding:6px;
+margin:5px;
+width:250px;
 }
 </style>
 </head>
@@ -78,7 +68,7 @@ margin:30px 0;
 
 <div class="container">
 
-<h1>🇮🇳 Bharat AI App Store</h1>
+<h1>🇮🇳 Bharat AI App Store – PRO</h1>
 
 <button id="loginBtn">Login</button>
 <button id="logoutBtn" style="display:none;">Logout</button>
@@ -86,11 +76,17 @@ margin:30px 0;
 
 <hr>
 
+<!-- SEARCH -->
+<h3>🔎 Search Apps</h3>
+<input id="searchInput" placeholder="Search app name...">
+<button onclick="startVoice()">🎤 Voice</button>
+
+<hr>
+
 <h3>Upload App</h3>
 <input id="appName" placeholder="App Name"><br>
 <textarea id="appDesc" placeholder="Description"></textarea><br>
 <select id="appCategory">
-<option value="">Select Category</option>
 <option>AI</option>
 <option>Education</option>
 <option>Finance</option>
@@ -102,59 +98,29 @@ margin:30px 0;
 
 <hr>
 
-<h2>🔥 Trending - AI</h2>
-<div class="grid" id="aiApps"></div>
-
-<h2>🔥 Trending - Education</h2>
-<div class="grid" id="educationApps"></div>
-
-<h2>🔥 Trending - Finance</h2>
-<div class="grid" id="financeApps"></div>
-
-<h2>🔥 Trending - Tools</h2>
-<div class="grid" id="toolsApps"></div>
-
-<h2>🔥 Trending - Entertainment</h2>
-<div class="grid" id="entertainmentApps"></div>
-
-<hr>
-
 <h2>📂 All Apps</h2>
 <div class="grid" id="approvedApps"></div>
 
 <hr>
 
-<h2>🧑‍💻 My Apps (Developer Dashboard)</h2>
+<h2>🧑‍💻 My Apps</h2>
 <div class="grid" id="myApps"></div>
 
+<div id="adminSection" style="display:none;" class="admin-panel">
+<h2>🛡 ADMIN PANEL</h2>
+<p>Total Apps: <span id="totalApps"></span></p>
+<p>Total Downloads: <span id="totalDownloads"></span></p>
+<p>Total Boosted Apps: <span id="totalBoosted"></span></p>
+<p>Estimated Revenue: ₹<span id="estimatedRevenue"></span></p>
 </div>
 
-<div class="modal" id="modal">
-<div class="modal-content">
-<h3 id="modalTitle"></h3>
-<p id="modalDesc"></p>
-<a id="modalDownload" target="_blank">Download</a>
-
-<h4>Rate this App</h4>
-<button onclick="rateApp(1)">⭐1</button>
-<button onclick="rateApp(2)">⭐2</button>
-<button onclick="rateApp(3)">⭐3</button>
-<button onclick="rateApp(4)">⭐4</button>
-<button onclick="rateApp(5)">⭐5</button>
-
-<br><br>
-<button onclick="boostApp()">🚀 Boost (Free 30 Days)</button>
-
-<br><br>
-<button onclick="closeModal()">Close</button>
-</div>
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig={
@@ -165,6 +131,8 @@ storageBucket:"YOUR_STORAGE_BUCKET",
 appId:"YOUR_APP_ID"
 };
 
+const ADMIN_EMAIL = "yourgmail@gmail.com";
+
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const db=getFirestore(app);
@@ -172,7 +140,6 @@ const storage=getStorage(app);
 const provider=new GoogleAuthProvider();
 
 let currentUser=null;
-let currentAppId=null;
 
 loginBtn.onclick=()=>signInWithPopup(auth,provider);
 logoutBtn.onclick=()=>signOut(auth);
@@ -193,8 +160,6 @@ loginBtn.style.display="inline";
 uploadBtn.onclick=async()=>{
 if(!currentUser) return alert("Login first");
 const file=appFile.files[0];
-if(!file) return alert("Select file");
-
 const storageRef=ref(storage,"apps/"+file.name);
 await uploadBytes(storageRef,file);
 const url=await getDownloadURL(storageRef);
@@ -208,164 +173,90 @@ developerEmail:currentUser.email,
 rating:0,
 totalRatings:0,
 downloads:0,
-boosted:false,
-boostExpiry:null,
-createdAt:serverTimestamp()
+boosted:false
 });
 
-alert("Uploaded Successfully");
+alert("Uploaded");
 loadApps();
 };
 
 async function loadApps(){
-
-aiApps.innerHTML="";
-educationApps.innerHTML="";
-financeApps.innerHTML="";
-toolsApps.innerHTML="";
-entertainmentApps.innerHTML="";
 approvedApps.innerHTML="";
 myApps.innerHTML="";
 
-const snapshot = await getDocs(collection(db,"apps"));
+const snapshot=await getDocs(collection(db,"apps"));
+let totalD=0, totalB=0;
 let apps=[];
 
-for(const docSnap of snapshot.docs){
-
-let data = docSnap.data();
-data.id = docSnap.id;
-
-if(data.boostExpiry && data.boostExpiry.toDate() < new Date()){
-await updateDoc(doc(db,"apps",data.id),{
-boosted:false,
-boostExpiry:null
-});
-data.boosted=false;
-}
-
-let score =
-(data.rating*3) +
-(data.totalRatings*2) +
-(data.downloads*1) +
-(data.boosted ? 500 : 0);
-
-data.score = score;
-apps.push(data);
-}
-
-apps.sort((a,b)=>b.score-a.score);
-
-["AI","Education","Finance","Tools","Entertainment"].forEach(category=>{
-let filtered = apps.filter(a=>a.category===category).slice(0,5);
-filtered.forEach(app=>{
-if(category==="AI") aiApps.innerHTML+=cardHTML(app);
-if(category==="Education") educationApps.innerHTML+=cardHTML(app);
-if(category==="Finance") financeApps.innerHTML+=cardHTML(app);
-if(category==="Tools") toolsApps.innerHTML+=cardHTML(app);
-if(category==="Entertainment") entertainmentApps.innerHTML+=cardHTML(app);
-});
+snapshot.forEach(docSnap=>{
+let d=docSnap.data();
+d.id=docSnap.id;
+apps.push(d);
 });
 
 apps.forEach(app=>{
-approvedApps.innerHTML+=cardHTML(app);
+totalD+=app.downloads||0;
+if(app.boosted) totalB++;
 });
 
-if(currentUser){
-let myList = apps.filter(a=>a.developerEmail===currentUser.email);
-myList.forEach(app=>{
-myApps.innerHTML+=`
+totalApps.innerText=apps.length;
+totalDownloads.innerText=totalD;
+totalBoosted.innerText=totalB;
+estimatedRevenue.innerText=(totalB*199);
+
+if(currentUser && currentUser.email===ADMIN_EMAIL){
+adminSection.style.display="block";
+}
+
+let searchText=searchInput.value.toLowerCase();
+
+apps
+.filter(a=>a.name.toLowerCase().includes(searchText))
+.forEach(app=>{
+approvedApps.innerHTML+=`
 <div class="card">
 ${app.boosted?'<div class="boost-badge">🔥 BOOSTED</div>':''}
 <h4>${app.name}</h4>
-<p>⭐ ${app.rating.toFixed(1)}</p>
-<p>📥 ${app.downloads}</p>
-<p>Boost Expiry: ${app.boostExpiry ? app.boostExpiry.toDate().toDateString() : "Not Boosted"}</p>
-<button onclick="deleteApp('${app.id}')">Delete</button>
-</div>
-`;
-});
-}
-
-}
-
-function cardHTML(app){
-return `
-<div class="card" onclick="openModal('${app.id}','${app.name}','${app.description}','${app.fileURL}')">
-${app.boosted?'<div class="boost-badge">🔥 BOOSTED</div>':''}
-<h4>${app.name}</h4>
 <p>${app.category}</p>
-<p>⭐ ${app.rating.toFixed(1)} (${app.totalRatings})</p>
 <p>📥 ${app.downloads}</p>
-</div>
-`;
+<button onclick="boostApp('${app.id}')">Boost</button>
+${currentUser && currentUser.email===ADMIN_EMAIL ? 
+`<button onclick="deleteApp('${app.id}')">Delete</button>`:""}
+</div>`;
+});
+
+if(currentUser){
+apps.filter(a=>a.developerEmail===currentUser.email)
+.forEach(app=>{
+myApps.innerHTML+=`
+<div class="card">
+<h4>${app.name}</h4>
+<p>📥 ${app.downloads}</p>
+<button onclick="deleteApp('${app.id}')">Delete</button>
+</div>`;
+});
+}
 }
 
-window.openModal=(id,name,desc,url)=>{
-currentAppId=id;
-modal.style.display="flex";
-modalTitle.innerText=name;
-modalDesc.innerText=desc;
-modalDownload.href=url;
-modalDownload.onclick=()=>increaseDownload(id);
+searchInput.oninput=()=>loadApps();
+
+window.startVoice=()=>{
+const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
+recognition.start();
+recognition.onresult=(e)=>{
+searchInput.value=e.results[0][0].transcript;
+loadApps();
+};
 };
 
-window.closeModal=()=>modal.style.display="none";
-
-async function increaseDownload(id){
-const refDoc=doc(db,"apps",id);
-const snap=await getDoc(refDoc);
-await updateDoc(refDoc,{
-downloads:(snap.data().downloads||0)+1
-});
-}
-
-window.rateApp=async(star)=>{
-if(!currentUser) return alert("Login first");
-const refDoc=doc(db,"apps",currentAppId);
-const snap=await getDoc(refDoc);
-let d=snap.data();
-
-let newAvg=((d.rating*d.totalRatings)+star)/(d.totalRatings+1);
-
-await updateDoc(refDoc,{
-rating:newAvg,
-totalRatings:d.totalRatings+1
-});
-
-alert("Thanks for rating");
+window.boostApp=async(id)=>{
+await updateDoc(doc(db,"apps",id),{boosted:true});
+alert("Boost Activated (Future Paid Ready)");
 loadApps();
-closeModal();
-};
-
-window.boostApp=async()=>{
-if(!currentUser) return alert("Login first");
-
-const refDoc=doc(db,"apps",currentAppId);
-const snap=await getDoc(refDoc);
-let d=snap.data();
-
-if(d.boostExpiry && d.boostExpiry.toDate()>new Date()){
-alert("Already boosted for 30 days");
-return;
-}
-
-let expiry=new Date();
-expiry.setDate(expiry.getDate()+30);
-
-await updateDoc(refDoc,{
-boosted:true,
-boostExpiry:expiry
-});
-
-alert("🔥 Boost Activated (Free 30 Days)");
-loadApps();
-closeModal();
 };
 
 window.deleteApp=async(id)=>{
-if(!confirm("Delete this app?")) return;
 await deleteDoc(doc(db,"apps",id));
-alert("App Deleted");
 loadApps();
 };
 
