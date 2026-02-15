@@ -69,6 +69,9 @@ padding:20px;
 border-radius:12px;
 width:300px;
 }
+hr{
+margin:30px 0;
+}
 </style>
 </head>
 <body>
@@ -80,6 +83,8 @@ width:300px;
 <button id="loginBtn">Login</button>
 <button id="logoutBtn" style="display:none;">Logout</button>
 <h3 id="welcome"></h3>
+
+<hr>
 
 <h3>Upload App</h3>
 <input id="appName" placeholder="App Name"><br>
@@ -117,6 +122,11 @@ width:300px;
 <h2>📂 All Apps</h2>
 <div class="grid" id="approvedApps"></div>
 
+<hr>
+
+<h2>🧑‍💻 My Apps (Developer Dashboard)</h2>
+<div class="grid" id="myApps"></div>
+
 </div>
 
 <div class="modal" id="modal">
@@ -144,7 +154,7 @@ width:300px;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig={
@@ -215,6 +225,7 @@ financeApps.innerHTML="";
 toolsApps.innerHTML="";
 entertainmentApps.innerHTML="";
 approvedApps.innerHTML="";
+myApps.innerHTML="";
 
 const snapshot = await getDocs(collection(db,"apps"));
 let apps=[];
@@ -245,9 +256,7 @@ apps.push(data);
 apps.sort((a,b)=>b.score-a.score);
 
 ["AI","Education","Finance","Tools","Entertainment"].forEach(category=>{
-
 let filtered = apps.filter(a=>a.category===category).slice(0,5);
-
 filtered.forEach(app=>{
 if(category==="AI") aiApps.innerHTML+=cardHTML(app);
 if(category==="Education") educationApps.innerHTML+=cardHTML(app);
@@ -255,12 +264,27 @@ if(category==="Finance") financeApps.innerHTML+=cardHTML(app);
 if(category==="Tools") toolsApps.innerHTML+=cardHTML(app);
 if(category==="Entertainment") entertainmentApps.innerHTML+=cardHTML(app);
 });
-
 });
 
 apps.forEach(app=>{
 approvedApps.innerHTML+=cardHTML(app);
 });
+
+if(currentUser){
+let myList = apps.filter(a=>a.developerEmail===currentUser.email);
+myList.forEach(app=>{
+myApps.innerHTML+=`
+<div class="card">
+${app.boosted?'<div class="boost-badge">🔥 BOOSTED</div>':''}
+<h4>${app.name}</h4>
+<p>⭐ ${app.rating.toFixed(1)}</p>
+<p>📥 ${app.downloads}</p>
+<p>Boost Expiry: ${app.boostExpiry ? app.boostExpiry.toDate().toDateString() : "Not Boosted"}</p>
+<button onclick="deleteApp('${app.id}')">Delete</button>
+</div>
+`;
+});
+}
 
 }
 
@@ -320,9 +344,7 @@ const refDoc=doc(db,"apps",currentAppId);
 const snap=await getDoc(refDoc);
 let d=snap.data();
 
-const now=new Date();
-
-if(d.boostExpiry && d.boostExpiry.toDate()>now){
+if(d.boostExpiry && d.boostExpiry.toDate()>new Date()){
 alert("Already boosted for 30 days");
 return;
 }
@@ -338,6 +360,13 @@ boostExpiry:expiry
 alert("🔥 Boost Activated (Free 30 Days)");
 loadApps();
 closeModal();
+};
+
+window.deleteApp=async(id)=>{
+if(!confirm("Delete this app?")) return;
+await deleteDoc(doc(db,"apps",id));
+alert("App Deleted");
+loadApps();
 };
 
 </script>
