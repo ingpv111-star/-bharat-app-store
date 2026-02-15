@@ -1,42 +1,23 @@
-window.boostApp = async (appId)=>{
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bharat App Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Razorpay Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
 
-if(!currentUser){
-alert("Login first");
-return;
-}
+<body>
 
-const options = {
-key: "RAZORPAY_KEY_ID", // apni key daalo
-amount: 19900, // ₹199
-currency: "INR",
-name: "Bharat AI App Store",
-description: "1 Month Boost",
-image: "https://yourlogo.png",
-prefill: {
-name: currentUser.displayName,
-email: currentUser.email
-},
-theme: {
-color: "#138808"
-},
-handler: async function (response){
+    <h1>Bharat App Store</h1>
 
-let expiry = new Date();
-expiry.setDate(expiry.getDate() + 30);
+    <button onclick="boostApp(1)">Boost App ₹199</button>
 
-await updateDoc(doc(db,"apps",appId),{
-boosted:true,
-boostExpiry:expiry,
-paidBoost:true,
-paymentId:response.razorpay_payment_id
-});
+    <script src="script.js"></script>
 
-alert("🔥 Boost Activated for 30 Days");
-loadApps();
-}
-};
-
-const rzp = new Razorpay(options);
-rzp.open();
-
-};
+</body>
+</html>
