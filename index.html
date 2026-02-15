@@ -14,6 +14,17 @@
 
   <p id="userInfo"></p>
 
+  <hr>
+
+  <div id="uploadSection" style="display:none;">
+    <h2>Upload Your App</h2>
+    <input type="text" id="appName" placeholder="App Name"><br><br>
+    <textarea id="appDesc" placeholder="App Description"></textarea><br><br>
+    <button onclick="uploadApp()">Upload App</button>
+  </div>
+
+  <hr>
+
   <h2>Available Apps</h2>
   <div id="appList"></div>
 
@@ -30,7 +41,8 @@
     import { 
       getFirestore, 
       collection, 
-      getDocs 
+      getDocs,
+      addDoc
     } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -58,15 +70,42 @@
       signOut(auth);
       document.getElementById("userInfo").innerHTML = "";
       document.getElementById("appList").innerHTML = "";
+      document.getElementById("uploadSection").style.display = "none";
     }
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
         document.getElementById("userInfo").innerHTML =
           "Welcome " + user.displayName + " 🎉";
+
+        document.getElementById("uploadSection").style.display = "block";
+
         loadApps();
       }
     });
+
+    window.uploadApp = async function() {
+      const name = document.getElementById("appName").value;
+      const description = document.getElementById("appDesc").value;
+
+      if (!name || !description) {
+        alert("Please fill all fields");
+        return;
+      }
+
+      await addDoc(collection(db, "apps"), {
+        name: name,
+        description: description,
+        createdAt: new Date()
+      });
+
+      alert("App Uploaded Successfully 🚀");
+
+      document.getElementById("appName").value = "";
+      document.getElementById("appDesc").value = "";
+
+      loadApps();
+    }
 
     async function loadApps() {
       const querySnapshot = await getDocs(collection(db, "apps"));
