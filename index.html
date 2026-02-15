@@ -39,6 +39,7 @@ button{
 #loginBtn{background:#4285F4;color:white;}
 #logoutBtn{background:#d9534f;color:white;}
 #uploadBtn{background:green;color:white;}
+#voiceBtn{background:#000;color:white;}
 
 .grid{
   display:grid;
@@ -76,6 +77,11 @@ button{
   color:white;
 }
 
+.search-box{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
 </style>
 </head>
 <body>
@@ -89,7 +95,10 @@ button{
 
 <h3 id="welcome"></h3>
 
+<div class="search-box">
 <input type="text" id="search" placeholder="🔍 Search Apps..." />
+<button id="voiceBtn">🎙</button>
+</div>
 
 <div id="uploadSection" style="display:none;">
 <h3>Upload App</h3>
@@ -141,6 +150,8 @@ const uploadSection=document.getElementById("uploadSection");
 const uploadBtn=document.getElementById("uploadBtn");
 const appsDiv=document.getElementById("apps");
 const searchInput=document.getElementById("search");
+const voiceBtn=document.getElementById("voiceBtn");
+const welcome=document.getElementById("welcome");
 
 let currentUser=null;
 let allApps=[];
@@ -151,6 +162,7 @@ logoutBtn.onclick=()=>signOut(auth);
 onAuthStateChanged(auth,(user)=>{
 currentUser=user;
 if(user){
+welcome.innerHTML="Welcome "+user.displayName+" 👑";
 loginBtn.style.display="none";
 logoutBtn.style.display="inline";
 if(user.email===ADMIN_EMAIL){
@@ -158,6 +170,7 @@ uploadSection.style.display="block";
 }
 loadApps();
 }else{
+welcome.innerHTML="";
 loginBtn.style.display="inline";
 logoutBtn.style.display="none";
 uploadSection.style.display="none";
@@ -220,6 +233,26 @@ const filtered=allApps.filter(app=>
 app.name.toLowerCase().includes(value)
 );
 displayApps(filtered);
+};
+
+voiceBtn.onclick=()=>{
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SpeechRecognition){
+alert("Voice search not supported in this browser");
+return;
+}
+const recognition=new SpeechRecognition();
+recognition.lang="en-IN";
+recognition.start();
+recognition.onresult=(event)=>{
+const transcript=event.results[0][0].transcript;
+searchInput.value=transcript;
+const value=transcript.toLowerCase();
+const filtered=allApps.filter(app=>
+app.name.toLowerCase().includes(value)
+);
+displayApps(filtered);
+};
 };
 
 window.deleteApp=async(id)=>{
