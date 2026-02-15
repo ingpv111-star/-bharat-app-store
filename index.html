@@ -13,9 +13,9 @@
     }
 
     .container {
-      margin-top: 50px;
+      margin-top: 40px;
       background: white;
-      width: 500px;
+      width: 600px;
       margin-left: auto;
       margin-right: auto;
       padding: 30px;
@@ -23,7 +23,7 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
 
-    input, textarea {
+    input, textarea, select {
       width: 90%;
       padding: 8px;
       margin: 5px;
@@ -43,10 +43,22 @@
 
     .app-card {
       background: #f5f5f5;
-      padding: 10px;
-      margin: 10px;
-      border-radius: 10px;
+      padding: 15px;
+      margin: 15px;
+      border-radius: 12px;
+      text-align: left;
     }
+
+    .download-btn {
+      background: #138808;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 5px;
+    }
+
   </style>
 </head>
 <body>
@@ -62,8 +74,21 @@
 
   <div id="uploadSection" style="display:none;">
     <h3>Upload Your App</h3>
+
     <input type="text" id="appName" placeholder="App Name" />
     <textarea id="appDesc" placeholder="App Description"></textarea>
+
+    <select id="appCategory">
+      <option value="">Select Category</option>
+      <option>AI</option>
+      <option>Education</option>
+      <option>Finance</option>
+      <option>Tools</option>
+      <option>Entertainment</option>
+    </select>
+
+    <input type="text" id="appLink" placeholder="Download Link (APK or Website URL)" />
+
     <button id="uploadBtn">Upload App</button>
   </div>
 
@@ -99,13 +124,8 @@ const uploadSection = document.getElementById("uploadSection");
 const uploadBtn = document.getElementById("uploadBtn");
 const appsDiv = document.getElementById("apps");
 
-loginBtn.onclick = () => {
-  signInWithPopup(auth, provider);
-};
-
-logoutBtn.onclick = () => {
-  signOut(auth);
-};
+loginBtn.onclick = () => signInWithPopup(auth, provider);
+logoutBtn.onclick = () => signOut(auth);
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -125,12 +145,17 @@ onAuthStateChanged(auth, (user) => {
 uploadBtn.onclick = async () => {
   const name = document.getElementById("appName").value;
   const desc = document.getElementById("appDesc").value;
+  const category = document.getElementById("appCategory").value;
+  const link = document.getElementById("appLink").value;
 
-  if(name && desc){
+  if(name && desc && category && link){
     await addDoc(collection(db, "apps"), {
-      name: name,
-      description: desc
+      name,
+      description: desc,
+      category,
+      link
     });
+
     alert("App Uploaded Successfully 🚀");
     loadApps();
   } else {
@@ -146,7 +171,9 @@ async function loadApps(){
     appsDiv.innerHTML += `
       <div class="app-card">
         <h4>${data.name}</h4>
+        <p><b>Category:</b> ${data.category}</p>
         <p>${data.description}</p>
+        <a class="download-btn" href="${data.link}" target="_blank">Download</a>
       </div>
     `;
   });
