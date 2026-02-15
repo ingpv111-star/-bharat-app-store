@@ -18,7 +18,7 @@ padding:20px;
 border-radius:15px;
 }
 button{
-padding:8px 15px;
+padding:6px 12px;
 margin:5px;
 border:none;
 border-radius:8px;
@@ -52,6 +52,10 @@ padding:20px;
 border-radius:12px;
 width:300px;
 }
+.star-btn{
+background:#ff9933;
+color:white;
+}
 </style>
 </head>
 <body>
@@ -79,19 +83,6 @@ width:300px;
 <input type="file" id="appFile"><br>
 <button id="uploadBtn">Submit</button>
 
-<h2>Filter by Category</h2>
-<select id="filterCategory">
-<option value="all">All</option>
-<option>AI</option>
-<option>Education</option>
-<option>Finance</option>
-<option>Tools</option>
-<option>Entertainment</option>
-</select>
-
-<h2>My Apps</h2>
-<div class="grid" id="myApps"></div>
-
 <h2>Approved Apps</h2>
 <div class="grid" id="approvedApps"></div>
 
@@ -101,7 +92,16 @@ width:300px;
 <div class="modal-content">
 <h3 id="modalTitle"></h3>
 <p id="modalDesc"></p>
-<a id="modalDownload" target="_blank">Download</a><br><br>
+<a id="modalDownload" target="_blank">Download</a>
+
+<h4>Rate this App</h4>
+<button class="star-btn" onclick="rateApp(1)">⭐1</button>
+<button class="star-btn" onclick="rateApp(2)">⭐2</button>
+<button class="star-btn" onclick="rateApp(3)">⭐3</button>
+<button class="star-btn" onclick="rateApp(4)">⭐4</button>
+<button class="star-btn" onclick="rateApp(5)">⭐5</button>
+
+<br><br>
 <button onclick="closeModal()">Close</button>
 </div>
 </div>
@@ -110,7 +110,7 @@ width:300px;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig={
@@ -128,6 +128,7 @@ const storage=getStorage(app);
 const provider=new GoogleAuthProvider();
 
 let currentUser=null;
+let currentAppId=null;
 
 loginBtn.onclick=()=>signInWithPopup(auth,provider);
 logoutBtn.onclick=()=>signOut(auth);
@@ -159,7 +160,9 @@ description:appDesc.value,
 category:appCategory.value,
 fileURL:url,
 status:"approved",
-developerEmail:currentUser.email
+developerEmail:currentUser.email,
+rating:0,
+totalRatings:0
 });
 
 alert("Uploaded Successfully");
@@ -168,33 +171,27 @@ loadApps();
 
 async function loadApps(){
 approvedApps.innerHTML="";
-myApps.innerHTML="";
 
-let q=query(collection(db,"apps"),where("status","==","approved"));
-let snapshot=await getDocs(q);
+const snapshot=await getDocs(collection(db,"apps"));
 
-snapshot.forEach(doc=>{
-const data=doc.data();
+snapshot.forEach(docSnap=>{
+const data=docSnap.data();
+const id=docSnap.id;
 
+if(data.status==="approved"){
 approvedApps.innerHTML+=`
-<div class="card" onclick="openModal('${data.name}','${data.description}','${data.fileURL}')">
+<div class="card" onclick="openModal('${id}','${data.name}','${data.description}','${data.fileURL}')">
 <h4>${data.name}</h4>
 <p>${data.category}</p>
-</div>
-`;
-
-if(currentUser && currentUser.email===data.developerEmail){
-myApps.innerHTML+=`
-<div class="card">
-<h4>${data.name}</h4>
-<p>Status: ${data.status}</p>
+<p>⭐ ${data.rating?.toFixed(1) || 0} (${data.totalRatings || 0})</p>
 </div>
 `;
 }
 });
 }
 
-window.openModal=(name,desc,url)=>{
+window.openModal=(id,name,desc,url)=>{
+currentAppId=id;
 modal.style.display="flex";
 modalTitle.innerText=name;
 modalDesc.innerText=desc;
@@ -203,6 +200,31 @@ modalDownload.href=url;
 
 window.closeModal=()=>{
 modal.style.display="none";
+};
+
+window.rateApp=async(star)=>{
+if(!currentUser){
+alert("Login first");
+return;
+}
+
+const appRef=doc(db,"apps",currentAppId);
+const snap=await getDoc(appRef);
+const data=snap.data();
+
+const oldRating=data.rating || 0;
+const total=data.totalRatings || 0;
+
+const newAverage=((oldRating * total) + star) / (total + 1);
+
+await updateDoc(appRef,{
+rating:newAverage,
+totalRatings:total+1
+});
+
+alert("Thanks for rating ⭐");
+loadApps();
+closeModal();
 };
 
 </script>
