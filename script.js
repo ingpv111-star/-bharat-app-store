@@ -1,60 +1,42 @@
-window.onload = function () {
-  loadApps();
-};
+function boostApp(appId) {
 
-function loadApps() {
-  const savedApps = JSON.parse(localStorage.getItem("apps")) || [];
+    if (!appId) {
+        alert("App ID missing!");
+        return;
+    }
 
-  // Sort by downloads (highest first)
-  savedApps.sort((a, b) => b.downloads - a.downloads);
+    var options = {
+        key: "rzp_test_XXXXXXXXXXXX", // 👈 Yaha apni Razorpay Key dalo
+        amount: 19900, // 199 INR (amount paise me hota hai)
+        currency: "INR",
+        name: "Bharat App Store",
+        description: "1 Month Boost",
+        image: "https://ingpv111-star.github.io/-bharat-app-store/logo.png", // optional logo
 
-  document.body.querySelectorAll(".app-card.dynamic").forEach(e => e.remove());
+        handler: function (response) {
 
-  savedApps.forEach((app, index) => displayApp(app, index));
-}
+            if (response.razorpay_payment_id) {
 
-function addApp() {
-  const name = document.getElementById("appName").value;
-  const desc = document.getElementById("appDesc").value;
-  const link = document.getElementById("appLink").value;
+                alert("✅ Payment Successful!\nPayment ID: " + response.razorpay_payment_id);
 
-  if (!name || !desc || !link) {
-    alert("Please fill all fields");
-    return;
-  }
+                // Yaha aap boost activate kar sakte ho
+                localStorage.setItem("boost_" + appId, true);
 
-  const newApp = { name, desc, link, downloads: 0 };
+                location.reload();
+            }
+        },
 
-  const savedApps = JSON.parse(localStorage.getItem("apps")) || [];
-  savedApps.push(newApp);
-  localStorage.setItem("apps", JSON.stringify(savedApps));
+        prefill: {
+            name: "",
+            email: "",
+            contact: ""
+        },
 
-  loadApps();
+        theme: {
+            color: "#3399cc"
+        }
+    };
 
-  document.getElementById("appName").value = "";
-  document.getElementById("appDesc").value = "";
-  document.getElementById("appLink").value = "";
-}
-
-function displayApp(app, index) {
-  const appDiv = document.createElement("div");
-  appDiv.className = "app-card dynamic";
-
-  appDiv.innerHTML = `
-    <h2>${app.name}</h2>
-    <p>${app.desc}</p>
-    <p>🔥 Downloads: <span id="count-${index}">${app.downloads}</span></p>
-    <a href="${app.link}" target="_blank">
-      <button onclick="increaseDownload(${index})">Install</button>
-    </a>
-  `;
-
-  document.body.appendChild(appDiv);
-}
-
-function increaseDownload(index) {
-  const savedApps = JSON.parse(localStorage.getItem("apps")) || [];
-  savedApps[index].downloads += 1;
-  localStorage.setItem("apps", JSON.stringify(savedApps));
-  loadApps();
+    var rzp = new Razorpay(options);
+    rzp.open();
 }
